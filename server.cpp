@@ -6,8 +6,10 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include "FileSys.h"
+#include <unistd.h>
 using namespace std;
 
+// port 10486
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
 		cout << "Usage: ./nfsserver port#\n";
@@ -17,7 +19,20 @@ int main(int argc, char* argv[]) {
 
     //networking part: create the socket and accept the client connection
 
-    int sock; //change this line when necessary!
+    int sock = socket(AF_INET, SOCK_STREAM, 0);     //change this line when necessary!
+
+    char buffer[2048];
+
+    int backlog = 5;
+    struct sockaddr_in address;
+    address.sin_family = AF_INET;
+    address.sin_port = htons(port);
+    int bind(int sock, const struct sockaddr * addr, socklen_t addrlen);
+    
+    // listen to port
+    int listen(int sock, int backlog);
+    
+    //
 
     //mount the file system
     FileSys fs;
@@ -30,9 +45,9 @@ int main(int argc, char* argv[]) {
 
 
     //close the listening socket
+    close(sock);
 
     //unmout the file system
     fs.unmount();
-
     return 0;
 }
