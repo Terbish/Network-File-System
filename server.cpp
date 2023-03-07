@@ -51,72 +51,26 @@ void received_msg(int sock, string &msg){
 
 }
 
-// port 10486
-int main(int argc, char* argv[]) {
-	if (argc < 2) {
-		cout << "Usage: ./nfsserver port#\n";
-        return -1;
+// Helper function for printing the client address in a human-readable format
+void *get_in_addr(struct sockaddr *sa) {
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
     }
-    int port = atoi(argv[1]);
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
 
-    //networking part: create the socket and accept the client connection
-
-    int sock = socket(AF_INET, SOCK_STREAM, 0);     //change this line when necessary!
-
-    if (sock < 0)
-    {
-        cerr << "Error: Socket creation failed" << endl;
-        exit(1);
-    }
-    
-
-    char buffer[2048];
-
-    int backlog = 5;
-    struct sockaddr_in address;
-    address.sin_family = AF_INET;
-    address.sin_port = htons(port);
-    int bind(int sock, const struct sockaddr * addr, socklen_t addrlen);
-
-    if (bind < 0)
-    {
-        cerr << "Error: Port bind failure" << endl;
-        exit(1);
-    }
-
-    
-    
-    // listen to port
-    int listen(int sock, int backlog);
-    if (listen < 0)
-    {
-        cerr << "Error: Connection listening failed" << endl;
-        exit(1);
-    }
-    
-    
-    
-    //
-
-    //mount the file system
-    FileSys fs;
-    fs.mount(sock); //assume that sock is the new socket created 
-                    //for a TCP connection between the client and the server.   
- 
-    //loop: get the command from the client and invoke the file
-    //system operation which returns the results or error messages back to the clinet
-    //until the client closes the TCP connection.
-    string commands = "";
+void process_cmd(int fd, FileSys& fs){
+    string full_cmd = "";
     string cmd = "";
     string fname = "";
     string num = "";
 
     while (true)
     {
-        received_msg(sock, commands);
-        istringstream msg(commands);
+        received_msg(fd, full_cmd);
+        istringstream msg(full_cmd);
 
-        if (msg >> cmd)
+        if(msg >> cmd)
         {
             if (msg >> fname)
             {
@@ -124,38 +78,134 @@ int main(int argc, char* argv[]) {
             }
             
         }
-
-        if(cmd == "mkdir") {
-			fs.mkdir(fname.c_str());
-		} else if (cmd == "cd") {
-			fs.cd(fname.c_str());
-		} else if (cmd == "home") {
-			fs.home();
-		} else if (cmd == "rmdir") {
-			fs.rmdir(fname.c_str());
-		} else if (cmd == "ls") {
-			fs.ls();
-		} else if (cmd == "create") {
-			fs.create(fname.c_str());
-		} else if (cmd == "append") {
-			fs.append(fname.c_str(), num.c_str());
-		} else if (cmd == "cat") {
-			fs.cat(fname.c_str());
-		} else if(cmd == "head") {
-			cout << "$" << num << "$";
-			fs.head(fname.c_str(), stoi(num));
-		} else if(cmd == "rm") {
-			fs.rm(fname.c_str());
-		} else if(cmd == "stat") {
-			fs.stat(fname.c_str());
-		} else {
-            send_msg(sock, "Invalid CMD");
-        }
+        if (cmd == "mkdir")
+        {
+            fs.mkdir(fname.c_str());
+        } else if (cmd == "cd")
+        {
+            fs.cd(fname.c_str());
+        } else if (cmd == "home")
+        {
+            fs.home();
+        } else if (cmd == "rmdir")
+        {
+            fs.rmdir(fname.c_str());
+        } else if (cmd == "ls")
+        {
+            fs.ls();
+        } else if (cmd == "create")
+        {
+            fs.create(fname.c_str());
+        } else if (cmd == "append")
+        {
+            fs.append(fname.c_str(), num.c_str());
+        } else if (cmd == "cat")
+        {
+            fs.cat(fname.c_str());
+        } else if (cmd == "head")
+        {
+            cout << "$" << num << "$";
+        } else if (cmd == "rm")
+        {
+            fs.rm(fname.c_str());
+        } else if (cmd == "stat")
+        {
+            fs.stat(fname.c_str());
+        } else
+        {
+            send_msg(fd, "Invalid, Command");
+        } 
+        
     }
-    //close the listening socket
-    close(sock);
+    
+}
 
-    //unmout the file system
-    fs.unmount();
+// port 10486
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        cerr << "Usage: " << argv[0] << " port" << endl;
+        exit(1);
+    }
+
+    // Convert port argument to integer
+    int port = atoi(argv[1]);
+
+    // Get address info for socket
+    struct addrinfo hints, *servinfo, *p;
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC; // IPv4 or IPv6
+    hints.ai_socktype = SOCK_STREAM; // TCP socket
+    hints.ai_flags = AI_PASSIVE; // Use server IP address
+
+    int status;
+    if ((status = getaddrinfo(NULL, argv[1], &hints, &servinfo)) != 0) {
+        cerr << "getaddrinfo error: " << gai_strerror(status) << endl;
+        exit(1);
+    }
+
+    // Loop through results and bind to the first available address
+    int sockfd;
+    for (p = servinfo; p != NULL; p = p->ai_next) {
+        if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+            perror("socket");
+            continue;
+        }
+
+        int yes = 1;
+        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+            perror("setsockopt");
+            exit(1);
+        }
+
+        if (::bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            close(sockfd);
+            perror("bind");
+            continue;
+        }
+
+        break;
+    }
+
+    freeaddrinfo(servinfo);
+
+    if (p == NULL) {
+        cerr << "Failed to bind to any address" << endl;
+        exit(1);
+    }
+
+    // Listen for incoming connections
+    if (listen(sockfd, 5) == -1) {
+        perror("listen");
+        exit(1);
+    }
+
+    cout << "Waiting for connections on port " << port << endl;
+
+    // Accept incoming connection and print client address
+    struct sockaddr_storage their_addr;
+    socklen_t sin_size = sizeof their_addr;
+    int new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+    if (new_fd == -1) {
+        perror("accept");
+        exit(1);
+    }
+
+    char client_address[NI_MAXHOST];
+
+    if (getnameinfo((struct sockaddr*)&their_addr, sin_size, client_address, NI_MAXHOST, NULL, 0, NI_NUMERICHOST) != 0){
+        cout << "getnameinfo failed" << endl;
+    }
+    
+    cout << "Connection accepted from " << client_address << endl;
+
+    FileSys fs;
+    fs.mount(new_fd);
+
+    process_cmd(new_fd, fs);
+
+    close(new_fd);
+    close(sockfd);
+
     return 0;
 }
