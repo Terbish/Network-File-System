@@ -56,7 +56,6 @@ void Shell::unmountNFS() {
 
 // Remote procedure call on mkdir
 void Shell::mkdir_rpc(string dname) {
-  // to implement
   string command_str = "mkdir " + dname + "\r\n";
   char sent[2048];
   char received[2048];
@@ -72,7 +71,6 @@ void Shell::mkdir_rpc(string dname) {
 
 // Remote procedure call on cd
 void Shell::cd_rpc(string dname) {
-  // to implement
   string command_str = "cd " + dname + "\r\n";
   char sent[2048];
   char received[2048];
@@ -88,7 +86,6 @@ void Shell::cd_rpc(string dname) {
 
 // Remote procedure call on home
 void Shell::home_rpc() {
-  // to implement
   string command_str = "home\r\n";
   char sent[2048];
   char received[2048];
@@ -104,7 +101,6 @@ void Shell::home_rpc() {
 
 // Remote procedure call on rmdir
 void Shell::rmdir_rpc(string dname) {
-  // to implement
   string command_str = "rmdir " + dname + "\r\n";
   char sent[2048];
   char received[2048];
@@ -120,7 +116,6 @@ void Shell::rmdir_rpc(string dname) {
 
 // Remote procedure call on ls
 void Shell::ls_rpc() {
-  // to implement
   string command_str = "ls\r\n";
   char sent[2048];
   char received[2048];
@@ -136,7 +131,6 @@ void Shell::ls_rpc() {
 
 // Remote procedure call on create
 void Shell::create_rpc(string fname) {
-  // to implement
   string command_str = "create " + fname + "\r\n";
   char sent[2048];
   char received[2048];
@@ -152,7 +146,6 @@ void Shell::create_rpc(string fname) {
 
 // Remote procedure call on append
 void Shell::append_rpc(string fname, string data) {
-  // to implement
   string command_str = "append " + fname + data + "\r\n";
   char sent[2048];
   char received[2048];
@@ -168,7 +161,6 @@ void Shell::append_rpc(string fname, string data) {
 
 // Remote procesure call on cat
 void Shell::cat_rpc(string fname) {
-  // to implement
   string command_str = "cat " + fname + "\r\n";
   char sent[2048];
   char received[2048];
@@ -184,7 +176,6 @@ void Shell::cat_rpc(string fname) {
 
 // Remote procedure call on head
 void Shell::head_rpc(string fname, int n) {
-  // to implement
   string command_str = "head " + fname + to_string(n) + "\r\n";
   char sent[2048];
   char received[2048];
@@ -200,7 +191,6 @@ void Shell::head_rpc(string fname, int n) {
 
 // Remote procedure call on rm
 void Shell::rm_rpc(string fname) {
-  // to implement
   string command_str = "rm " + fname + "\r\n";
   char sent[2048];
   char received[2048];
@@ -216,7 +206,6 @@ void Shell::rm_rpc(string fname) {
 
 // Remote procedure call on stat
 void Shell::stat_rpc(string fname) { 
-  // to implement
   string command_str = "stat " + fname + "\r\n";
   char sent[2048];
   char received[2048];
