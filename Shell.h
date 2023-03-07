@@ -84,6 +84,9 @@ class Shell {
 
     // Remote procedure call on stat
     void stat_rpc(string fname); 
+
+    // Function to display messages
+    void display_message(string command_str, string status);
 };
 
 #endif
